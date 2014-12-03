@@ -1,7 +1,7 @@
 #makefile for gaf-geda
 
-# Input DIR using this directory structure cleans things upS
-NAME= xuntong-devboard
+# Input DIR using this directory structure cleans things up
+NAME=xuntong-devboard 
 #
 SCH=sch
 PCB=pcb
@@ -25,30 +25,27 @@ schematic-files = $(wildcard *.sch)
 list-gedafiles:
 	@$(foreach asset, $(pcb-files), echo $(asset);)
 	@$(foreach asset, $(schematic-files), echo $(asset);)
-.PHONY: all clean
-all:
+.PHONY: ps gerbers osh-park-gerbers clean
+ps:
 # Check for tags in the git repo
-ifneq ($(FORCE),YES)
- ifneq ($(STATUS),)
- $(error error: bad working state -- clean working state and try again or use override)
- endif
- ifneq ($(CHECKINS),)
- $(error error: untracked schematic or pcb content, add content or use override)
- endif
- ifeq ($(REV),)
- $(error error: revision history has no tags to work with, add one and try again)
- endif
-endif
+	ifneq ($(FORCE),YES)
+	  ifneq ($(STATUS),)
+	  $(error error: bad working state -- clean working state and try again or use override)
+	  endif
+	  ifneq ($(CHECKINS),)
+	  $(error error: untracked schematic or pcb content, add content or use override)
+	  endif
+	  ifeq ($(REV),)
+	 $(error error: revision history has no tags to work with, add one and try again)
+	endif
 # the following target exports postscript assets for the current commit using a
 # tag format, that's why we need tags
-ps : 
 	@$(foreach asset, $(pcb-files), pcb -x ps --psfile $(REV)-$(asset).$@ $(asset);) 
 # the following sed replacements work on variables found in CVS title blocks for gschem
 	$(foreach asset, $(schematic-files), sed -i "s/\(date=\).*/\1$\$(DATE)/" $(asset);sed -i "s/\(auth=\).*/\1$\$(AUTHOR)/" $(asset); sed -i "s/\(fname=\).*/\1$@/" $(asset); sed -i "s/\(rev=\).*/\1$\$(REV) $\$(TAG)/" $(asset); gaf export -o $(REV)-$(asset).$@  -- $(asset); git checkout -- $(asset);)
 # danger, we will discard changes to the schematic file in the working directory now.  This assumes that the working dir was clean before make was called and should be rewritten as an atomic operation
 # GERBERS (props to https://github.com/bgamari)
 #
-.PHONY: gerbers osh-park-gerbers
 gerbers: $(NAME).pcb 
 	rm -Rf gerbers
 	mkdir gerbers
@@ -83,3 +80,5 @@ hackvana-gerbers.zip : hackvana-gerbers
 	rm -f $@
 	zip -j $@ hackvana-gerbers/*
 	@echo "Be sure to add a version number to the zip file name"
+clean:
+	rm -f *~ *- *.backup *.new.pcb *.png *.bak *.gbr *.cnc *.ps
